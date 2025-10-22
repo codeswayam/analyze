@@ -1,0 +1,46 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+# Permissions required for GitHub Pages deployment
+permissions:
+  contents: read # To checkout the repository code
+  pages: write   # To deploy to GitHub Pages
+  id-token: write # To authenticate with GitHub Pages
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Ruff linter
+        run: ruff .
+
+      - name: Execute Python script and generate JSON result
+        run: python execute.py > result.json
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: 'result.json'
+
+      - name: Deploy to GitHub Pages
+        id: deployment # id for the deployment step, used to get page_url
+        uses: actions/deploy-pages@v4
